@@ -389,9 +389,9 @@ def proposal_layer(inputs, proposal_count, nms_threshold, anchors, config=None):
     # Non-max suppression   
     final_boxes = []
     for bx, sc in zip(boxes, scores):
-        keep = nms(torch.cat((bx, sc.unsqueeze(-1)), -1).data, nms_threshold)
-        keep = keep[:proposal_count]
-        bx = bx[keep, :]
+        # keep = nms(torch.cat((bx, sc.unsqueeze(-1)), -1).data, nms_threshold)
+        # keep = keep[:proposal_count]
+        # bx = bx[keep, :]
         final_boxes.append(
             F.pad(bx, (0, 0, 0, proposal_count - bx.shape[0]), "constant", 0) if bx.shape[0] < proposal_count else bx)
     final_boxes = torch.stack(final_boxes, 0)

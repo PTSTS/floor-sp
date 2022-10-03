@@ -8,7 +8,7 @@ headers = ['src/crop_and_resize.h']
 defines = []
 with_cuda = False
 
-extra_objects = []
+extra_objects = ['C:\\Project\\floor-sp\\venv\\Lib\\site-packages\\torch\\lib\\ATen.lib']
 if torch.cuda.is_available():
     print('Including CUDA code.')
     sources += ['src/crop_and_resize_gpu.c']

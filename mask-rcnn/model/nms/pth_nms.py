@@ -15,6 +15,7 @@ def pth_nms(dets, thresh):
 
     areas = (x2 - x1 + 1) * (y2 - y1 + 1)
     order = scores.sort(0, descending=True)[1]
+    dets = dets[order].contiguous()
     # order = torch.from_numpy(np.ascontiguousarray(scores.numpy().argsort()[::-1])).long()
 
     keep = torch.LongTensor(dets.size(0))
