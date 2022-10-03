@@ -21,7 +21,7 @@ class InferenceConfig(main.LianjiaConfig):
     # Set batch size to 1 since we'll be running inference on
     # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
     # GPU_COUNT = 0 for CPU
-    GPU_COUNT = 1
+    GPU_COUNT = 0
     IMAGES_PER_GPU = 1
 
 
@@ -34,8 +34,9 @@ if config.GPU_COUNT:
     model = model.cuda()
 
 # Load weights trained on MS-COCO
-saved_model = './logs/mask_rcnn_lianjia_dataset_0069.pth'
-model.load_state_dict(torch.load(saved_model))
+saved_model = "C:\\Project\\floor-sp\\logs\\mask_rcnn_lianjia_dataset_0069.pth"
+# model.load_state_dict(torch.load(saved_model, map_location=torch.device('cpu')))
+model.load_state_dict(torch.load(saved_model, map_location='cpu'))
 
 print('loaded weights from {}'.format(saved_model))
 
@@ -67,7 +68,7 @@ if not os.path.exists(VIZ_DIR):
 
 for file_idx, filename in enumerate(sorted(os.listdir(data_dir))):
     file_path = os.path.join(data_dir, filename)
-    data = np.load(file_path, encoding='latin1').tolist()
+    data = np.load(file_path, encoding='latin1', allow_pickle=True).tolist()
 
     image = data['topview_image']
     room_annot = data['room_instances_annot']

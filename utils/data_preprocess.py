@@ -144,7 +144,7 @@ def merge_point_clouds(base_dir, out_path=None, adjustment=False):
 def process_annot(dir_path, out_path):
     dir_name = osp.basename(dir_path)
     file_path = osp.join(dir_path, 'floorplan.json')
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)['floorplans']
         assert len(data) >= 1
         data = data[0]  # the first element is the default floorplan annotation
