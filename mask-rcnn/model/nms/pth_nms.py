@@ -18,10 +18,14 @@ def pth_nms(dets, thresh):
     dets = dets[order].contiguous()
     # order = torch.from_numpy(np.ascontiguousarray(scores.numpy().argsort()[::-1])).long()
 
+    # keep = torch.zeros(dets.size(0)).to(torch.long)
     keep = torch.LongTensor(dets.size(0))
     num_out = torch.LongTensor(1)
     nms.cpu_nms(keep, num_out, dets, order, areas, thresh)
-
+    print(keep)
+    print(num_out)
+    if num_out[0] > 100000000:
+      print('Potential value overflow num_out')
     return keep[:num_out[0]]
   else:
     x1 = dets[:, 1]

@@ -29,7 +29,7 @@ def reporthook(blocknum, blocksize, totalsize):
         sys.stderr.write("read %d\n" % (readsofar,))
 
 def main(args):
-    links = get_all_links(open(args.source))
+    links = get_all_links(open(args.source, encoding='utf-8'))
     for idx, link in enumerate(links):
         filename = link[:link.index('?')].split('/')[-1]
         save_path = os.path.join(args.dir, filename)
