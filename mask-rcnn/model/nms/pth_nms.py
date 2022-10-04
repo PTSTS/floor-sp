@@ -26,6 +26,7 @@ def pth_nms(dets, thresh):
     print(num_out)
     if num_out[0] > 100000000:
       print('Potential value overflow num_out')
+      num_out[0] = 1
     return keep[:num_out[0]]
   else:
     x1 = dets[:, 1]

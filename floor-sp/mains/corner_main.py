@@ -83,7 +83,7 @@ def train(configs):
 def predict_corners(configs):
     predict_phase = 'test'
     predict_dataset = LianjiaCornerDataset(
-        data_dir='./data/dataset_corner', phase=predict_phase,
+        data_dir='../data/dataset_corner', phase=predict_phase,
         augmentation='')
     # only support bs = 1 for testing
     predict_loader = DataLoader(predict_dataset, batch_size=1, shuffle=False)
@@ -93,7 +93,7 @@ def predict_corners(configs):
     model.double()
 
     if configs.model_path:
-        checkpoint = torch.load(configs.model_path)
+        checkpoint = torch.load(configs.model_path, map_location='cpu')
         model.load_state_dict(checkpoint['state_dict'])
         epoch_num = checkpoint['epoch']
         print('=> loaded checkpoint {} (epoch {})'.format(configs.model_path, epoch_num))
@@ -170,7 +170,7 @@ def predict_corners(configs):
 
 
 if __name__ == '__main__':
-    config_dict = load_config(file_path='./configs/config_cornernet.yaml')
+    config_dict = load_config(file_path='../configs/config_cornernet.yaml')
     configs = Struct(**config_dict)
     extra_option = configs.extra if hasattr(configs, 'extra') else None
     config_str = compose_config_str(configs, keywords=['lr', 'batch_size', 'augmentation'], extra=extra_option)

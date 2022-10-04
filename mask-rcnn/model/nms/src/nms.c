@@ -44,7 +44,7 @@ int cpu_nms(THLongTensor * keep_out, THLongTensor * num_out, THFloatTensor * box
     for (_i=0; _i < boxes_num; _i++) {
         i = order_flat[_i];
         if (suppressed_flat[i] == 1) {
-            keep_out_flat[num_to_keep] = 0;
+            // keep_out_flat[num_to_keep] = 0;
             continue;
         }
         keep_out_flat[num_to_keep++] = i;
@@ -82,9 +82,9 @@ int cpu_nms(THLongTensor * keep_out, THLongTensor * num_out, THFloatTensor * box
 
     printf("\nkeep_out_flat");
     for (int i = 0; i < keep_num; i ++) {
-        if (i%2 - 1 == 0) {
-            keep_out_flat[i] = 0;
-        }
+        // if (i%2 - 1 == 0) {
+        //     keep_out_flat[i] = 0;
+        // }
         printf(" %d,", keep_out_flat[i]);
     }
     printf("\n order flat");
@@ -94,15 +94,13 @@ int cpu_nms(THLongTensor * keep_out, THLongTensor * num_out, THFloatTensor * box
     printf("\n num_out_new");
 
     long* num_out_new = THLongTensor_data(num_out);
-    for (int i = 0; i < boxes_num; i ++) {
-        printf(" %d,", num_out_new[i]);
-    }
     printf("\n");
+    THByteTensor_free(suppressed);
 
     long *num_out_flat = THLongTensor_data(num_out);
+    *num_out_flat = 0;
     *num_out_flat = num_to_keep;
     printf("num_to_keep %d\n", num_to_keep);
     printf("num_out_flat %d\n", *num_out_flat);
-    THByteTensor_free(suppressed);
     return 1;
 }
