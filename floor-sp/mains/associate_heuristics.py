@@ -19,20 +19,20 @@ def room_corner_association(configs):
         os.makedirs(save_dir)
 
     # Test set
-    data_dir = '/local-scratch/cjc/floor-sp/floor-sp/data/Lianjia_room/test'
+    data_dir = 'C:\\Project\\floor-sp\\floor-sp\\data\\dataset_room\\test'
     # The path to corner preds on test set
-    corner_preds_dir = '/local-scratch/cjc/floor-sp/floor-sp/results_corner/lr_0.0001_batch_size_4_augmentation_r_corner_edge/test_preds'
+    corner_preds_dir = 'C:\Project\\floor-sp\\floor-sp\mains\\results_corner\\lr_0.0001_batch_size_4_augmentation_r_corner_edge\\test_preds'
 
     assert len(os.listdir(data_dir)) == len(os.listdir(corner_preds_dir))
 
     for idx, filename in enumerate(sorted(os.listdir(data_dir))):
         file_path = os.path.join(data_dir, filename)
         with open(file_path, 'rb') as f:
-            data = np.load(f).tolist()
+            data = np.load(f, allow_pickle=True).tolist()
 
         corner_preds_path = os.path.join(corner_preds_dir, '{}_corner_preds.npy'.format(idx))
         with open(corner_preds_path, 'rb') as f:
-            corner_preds = np.load(corner_preds_path).tolist()
+            corner_preds = np.load(corner_preds_path, allow_pickle=True).tolist()
 
         room_data = data['room_data']
         room_labels = data['class_names']
@@ -121,7 +121,7 @@ def room_corner_association(configs):
 
 
 if __name__ == '__main__':
-    config_dict = load_config(file_path='./configs/config_associate_module.yaml')
+    config_dict = load_config(file_path='../configs/config_associate_module.yaml')
     configs = Struct(**config_dict)
     extra_option = configs.extra if hasattr(configs, 'extra') else None
     exp_dir = os.path.join(configs.exp_base_dir, 'heuristic_based_association')

@@ -230,7 +230,7 @@ def _get_room_connections_pixel_grpah(room_info, density_img, inter_region, inte
     # debug_img += np.stack([inter_edge] * 3, -1) * 127
     debug_img = np.clip(debug_img, 0, 255)
 
-    imsave('./room_results/test/{}_{}_corners.png'.format(global_idx, room_idx), debug_img)
+    imsave('C:\\Project\\floor-sp\\floor-sp\\mains\\room_results\\test\\{}_{}_corners.png'.format(global_idx, room_idx), debug_img)
 
     im_size = mask.shape[0]
     room_corners = [info['corner'] for info in corners_info]

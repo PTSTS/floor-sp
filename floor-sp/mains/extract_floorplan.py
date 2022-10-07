@@ -7,19 +7,20 @@ from utils.floorplan_utils.cores import solve_connections
 from utils.floorplan_utils.merge import merge_room_graphs
 from utils.floorplan_utils.visualize import draw_final_floorplan
 import copy
+import cProfile, pstats
 
 import pdb
 
 
 def run_roomwise_coorindate_descent(source_dir, save_dir, round_1):
     for sample_idx in range(len(os.listdir(source_dir))):
-        if sample_idx < 32:
-            continue
+        # if sample_idx < 32:
+        #     continue
         filename = '{}_rooms_info.npy'.format(sample_idx)
         file_path = os.path.join(source_dir, filename)
 
         with open(file_path, 'rb') as f:
-            data = np.load(f)
+            data = np.load(f, allow_pickle=True)
         data = data.tolist()
 
         density_img = data['density_img']
@@ -30,9 +31,9 @@ def run_roomwise_coorindate_descent(source_dir, save_dir, round_1):
             graph, recon_info = solve_connections(data['rooms_info'], sample_idx, density_img, direction_hist,
                                                   room_labels_map)
         else:
-            round_1_dir = './results_floorplan/final/results_round_1'
+            round_1_dir = 'C:\\Project\\floor-sp\\floor-sp\\mains\\results_floorplan\\final\\round_1\\results'
             round_1_file = os.path.join(round_1_dir, '{}_recon.npy'.format(sample_idx))
-            prev_recon = np.load(round_1_file).tolist()
+            prev_recon = np.load(round_1_file, allow_pickle=True).tolist()
             prev_dp_rooms = prev_recon['dp_room_edges']
 
             graph, recon_info = solve_connections(data['rooms_info'], sample_idx, density_img, direction_hist,
@@ -67,7 +68,7 @@ def merge(data_dir, save_dir, rooms_info_dir):
     for sample_idx in range(len(os.listdir(data_dir))):
         filename = '{}_recon.npy'.format(sample_idx)
         file_path = os.path.join(data_dir, filename)
-        recon_info = np.load(file_path).tolist()
+        recon_info = np.load(file_path, allow_pickle=True).tolist()
         dp_room_edges = recon_info['dp_room_edges']
         density_img = recon_info['density_img']
         room_class_ids = recon_info['room_class_ids']
@@ -75,7 +76,7 @@ def merge(data_dir, save_dir, rooms_info_dir):
         room_labels_map = recon_info['room_labels_map']
 
         rooms_info_path = os.path.join(rooms_info_dir, '{}_rooms_info.npy'.format(sample_idx))
-        rooms_info_data = np.load(rooms_info_path).tolist()
+        rooms_info_data = np.load(rooms_info_path, allow_pickle=True).tolist()
         rooms_info = rooms_info_data['rooms_info']
 
         # filter failed rooms since they cannot be visualized
@@ -147,13 +148,17 @@ def merge(data_dir, save_dir, rooms_info_dir):
 
 
 if __name__ == '__main__':
-    rooms_info_src = './results_associate/mode_room_corner_lr_0.0001_batch_size_16/processed_preds'
-    SAVE_DIR = './results_floorplan/final/round_1'
-    ROUND_1 = True
+    rooms_info_src = 'C:\\Project\\floor-sp\\floor-sp\\mains\\results_associate\\heuristic_based_association\\processed_preds'
+    SAVE_DIR = 'C:\\Project\\floor-sp\\floor-sp\\mains\\results_floorplan\\final\\round_1'
+    ROUND_1 = False
+    profiler = cProfile.Profile()
+    profiler.enable()
     run_roomwise_coorindate_descent(source_dir=rooms_info_src, save_dir=SAVE_DIR, round_1=ROUND_1)
+    profiler.disable()
+    profiler.dump_stats('prof.prof')
 
     # Run the merging given the output(e.g. a set of room graohs) from the room-wise coordinate descent.
     # This is to generate high-resolution colorful visualization 
     # (not mandatory, as the merging is already run right after room-wise coordinarte descent. Just for beautiful visualization)
-    # data_dir = './results_floorplan/final/round_1/results'
-    # merge(data_dir, save_dir='./results_floorplan/final/round_1_merged', rooms_info_dir=rooms_info_src)
+    data_dir = 'C:\\Project\\floor-sp\\floor-sp\\mains\\results_floorplan/final/round_1/results'
+    merge(data_dir, save_dir='C:\\Project\\floor-sp\\floor-sp\\mains\\results_floorplan/final/round_1_merged', rooms_info_dir=rooms_info_src)

@@ -9,10 +9,10 @@ val_interval: 1
 max_iter_per_epoch: 1000
 num_epochs: 20
 visualize_iter: 5
-use_cuda: True
+use_cuda: False
 decay_rate: 0
 im_size: 256
 seed: 12138
 resume: True
-model_path: ../weights/room_corner_associate_module/checkpoint_associate_module_3.pth.tar
-exp_base_dir: ./results_associate
+model_path: C:/Project/floor-sp/floor-sp/mains/FloorPlotter_weights/room_corner_associate_module/checkpoint_associate_module_3.pth.tar
+exp_base_dir: results_associate

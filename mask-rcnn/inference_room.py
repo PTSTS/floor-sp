@@ -44,6 +44,7 @@ class InferenceConfig(main.LianjiaConfig):
     # GPU_COUNT = 0 for CPU
     GPU_COUNT = 0
     IMAGES_PER_GPU = 1
+    DETECTION_MIN_CONFIDENCE = 0
 
 
 config = InferenceConfig()
