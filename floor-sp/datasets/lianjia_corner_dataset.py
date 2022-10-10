@@ -62,8 +62,13 @@ class LianjiaCornerDataset(Dataset):
                 all_room_corners[room_i] = rot_room_corners
 
         normalized_image = skimage.img_as_float(image[0])  # only keep one channel since they are highly overlapped
-        corner_annot, corner_gt_map = generate_corner_annot(sample_data['point_dict'], sample_data['lines'])
-        edge_gt_map = generate_edge_annot(all_room_corners, self.im_size)
+        if len(sample_data['point_dict']):
+
+            corner_annot, corner_gt_map = generate_corner_annot(sample_data['point_dict'], sample_data['lines'])
+            edge_gt_map = generate_edge_annot(all_room_corners, self.im_size)
+        else:
+            corner_gt_map = None
+            edge_gt_map = None
 
         # for testing the augmentation
         # from scipy.misc import imsave

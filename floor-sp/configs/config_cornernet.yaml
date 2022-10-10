@@ -15,3 +15,4 @@ resume: False
 model_path: C:/Project/floor-sp/floor-sp/mains/FloorPlotter_weights/corner_edge_module/checkpoint_corner_edge_34.pth.tar
 dump_prediction: True
 exp_base_dir: ./results_corner
+data_dir: ../data/dataset_corner

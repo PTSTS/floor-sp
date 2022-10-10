@@ -83,7 +83,7 @@ def train(configs):
 def predict_corners(configs):
     predict_phase = 'test'
     predict_dataset = LianjiaCornerDataset(
-        data_dir='../data/dataset_corner', phase=predict_phase,
+        data_dir=configs.data_dir, phase=predict_phase,
         augmentation='')
     # only support bs = 1 for testing
     predict_loader = DataLoader(predict_dataset, batch_size=1, shuffle=False)
@@ -110,67 +110,121 @@ def predict_corners(configs):
             non_norm_image = batch_data['image_non_normalized']
             image_inputs = batch_data['image']
             mean_normal = batch_data['mean_normal']
-            corner_gt_map = batch_data['corner_gt_map']
-            edge_gt_map = batch_data['edge_gt_map']
-            room_masks_map = batch_data['room_masks_map']
+            if 'corner_gt_map' in batch_data.keys():
+                edge_gt_map = batch_data['edge_gt_map']
+                corner_gt_map = batch_data['corner_gt_map']
+                room_masks_map = batch_data['room_masks_map']
 
-            criterion = nn.BCEWithLogitsLoss()
+                criterion = nn.BCEWithLogitsLoss()
 
-            inputs = torch.cat([image_inputs.unsqueeze(1), mean_normal, room_masks_map.unsqueeze(1)], dim=1)
-            corner_preds_logits, edge_preds_logits, edge_preds, corner_preds = model(inputs)
-            corner_preds = corner_preds.squeeze(0).cpu().numpy()
-            edge_preds = edge_preds.squeeze(0).cpu().numpy()
-            gt_edge = edge_gt_map.squeeze(0).cpu().numpy()
-            gt_corner = corner_gt_map.squeeze(0).cpu().numpy()
+                inputs = torch.cat([image_inputs.unsqueeze(1), mean_normal, room_masks_map.unsqueeze(1)], dim=1)
+                corner_preds_logits, edge_preds_logits, edge_preds, corner_preds = model(inputs)
+                corner_preds = corner_preds.squeeze(0).cpu().numpy()
+                if 'corner_gt_map' in batch_data.keys():
+                    edge_preds = edge_preds.squeeze(0).cpu().numpy()
+                    gt_edge = edge_gt_map.squeeze(0).cpu().numpy()
+                gt_corner = corner_gt_map.squeeze(0).cpu().numpy()
 
-            loss_c = criterion(corner_preds_logits[0], corner_gt_map[0])
-            loss_e = criterion(edge_preds_logits[0], edge_gt_map[0])
-            loss = loss_c + loss_e
+                loss_c = criterion(corner_preds_logits[0], corner_gt_map[0])
+                loss_e = criterion(edge_preds_logits[0], edge_gt_map[0])
+                loss = loss_c + loss_e
 
-            vectorized_preds, corner_edge_map = get_corner_dir_map(corner_preds, 256)
-            vectorized_gt, gt_corner_edge_map = get_corner_dir_map(gt_corner, 256)
+                vectorized_preds, corner_edge_map = get_corner_dir_map(corner_preds, 256)
+                vectorized_gt, gt_corner_edge_map = get_corner_dir_map(gt_corner, 256)
 
-            input_im = np.transpose(non_norm_image.cpu().numpy().squeeze(0), [1, 2, 0])
-            corner_edge_map = np.clip(corner_edge_map + input_im, 0, 255)
-            gt_corner_edge_map = np.clip(gt_corner_edge_map + input_im, 0, 255)
-            heatmap = corner_preds[0]
-            heatmap_edge = edge_preds[0]
+                input_im = np.transpose(non_norm_image.cpu().numpy().squeeze(0), [1, 2, 0])
+                corner_edge_map = np.clip(corner_edge_map + input_im, 0, 255)
+                gt_corner_edge_map = np.clip(gt_corner_edge_map + input_im, 0, 255)
+                heatmap = corner_preds[0]
+                heatmap_edge = edge_preds[0]
 
-            global_direction_hist = get_direction_hist(edge_preds)
+                global_direction_hist = get_direction_hist(edge_preds)
 
-            print('instance loss {}'.format(loss))
-            print('finish corner predictions scene No.{}'.format(idx))
+                print('instance loss {}'.format(loss))
+                print('finish corner predictions scene No.{}'.format(idx))
 
-            save_path_cornermap = os.path.join(viz_dir, '{}_corners_pred.png'.format(idx))
-            save_path_cornermap_gt = os.path.join(viz_dir, '{}_corners_pred_gt.png'.format(idx))
-            imsave(save_path_cornermap, corner_edge_map)
-            imsave(save_path_cornermap_gt, gt_corner_edge_map)
-            save_path_heatmap = os.path.join(viz_dir, '{}_heatmap_pred.png'.format(idx))
-            save_path_heatmap_edge = os.path.join(viz_dir, '{}_heatmap_edge_pred.png'.format(idx))
-            imsave(save_path_heatmap, heatmap)
-            imsave(save_path_heatmap_edge, heatmap_edge)
+                save_path_cornermap = os.path.join(viz_dir, '{}_corners_pred.png'.format(idx))
+                save_path_cornermap_gt = os.path.join(viz_dir, '{}_corners_pred_gt.png'.format(idx))
+                imsave(save_path_cornermap, corner_edge_map)
+                imsave(save_path_cornermap_gt, gt_corner_edge_map)
+                save_path_heatmap = os.path.join(viz_dir, '{}_heatmap_pred.png'.format(idx))
+                save_path_heatmap_edge = os.path.join(viz_dir, '{}_heatmap_edge_pred.png'.format(idx))
+                imsave(save_path_heatmap, heatmap)
+                imsave(save_path_heatmap_edge, heatmap_edge)
 
-            # dump the intermediate results to disk
-            if configs.dump_prediction is True:
-                dump_dir = os.path.join(exp_dir, '{}_preds'.format(predict_phase))
-                if not os.path.exists(dump_dir):
-                    os.makedirs(dump_dir)
-                for pred_idx, pred_item in enumerate(vectorized_preds):  # keep the full binning information
-                    vectorized_preds[pred_idx]['binning'] = corner_preds[1:, pred_item['corner'][1],
-                                                            pred_item['corner'][0]]
-                dump_path = os.path.join(dump_dir, '{}_corner_preds.npy'.format(idx))
-                dump_data = {
-                    'vectorized_preds': vectorized_preds,
-                    'corner_heatmap': heatmap,
-                    'edge_preds': edge_preds,
-                    'direction_hist': global_direction_hist
-                }
-                with open(dump_path, 'wb') as f:
-                    np.save(f, dump_data)
+                # dump the intermediate results to disk
+                if configs.dump_prediction is True:
+                    dump_dir = os.path.join(exp_dir, '{}_preds'.format(predict_phase))
+                    if not os.path.exists(dump_dir):
+                        os.makedirs(dump_dir)
+                    for pred_idx, pred_item in enumerate(vectorized_preds):  # keep the full binning information
+                        vectorized_preds[pred_idx]['binning'] = corner_preds[1:, pred_item['corner'][1],
+                                                                pred_item['corner'][0]]
+                    dump_path = os.path.join(dump_dir, '{}_corner_preds.npy'.format(idx))
+                    dump_data = {
+                        'vectorized_preds': vectorized_preds,
+                        'corner_heatmap': heatmap,
+                        'edge_preds': edge_preds,
+                        'direction_hist': global_direction_hist
+                    }
+                    with open(dump_path, 'wb') as f:
+                        np.save(f, dump_data)
+            else:
+                # predict with no loss calculation
+                room_masks_map = batch_data['room_masks_map']
+
+                criterion = nn.BCEWithLogitsLoss()
+
+                inputs = torch.cat([image_inputs.unsqueeze(1), mean_normal, room_masks_map.unsqueeze(1)], dim=1)
+                corner_preds_logits, edge_preds_logits, edge_preds, corner_preds = model(inputs)
+                corner_preds = corner_preds.squeeze(0).cpu().numpy()
+                gt_corner = corner_gt_map.squeeze(0).cpu().numpy()
+
+
+                vectorized_preds, corner_edge_map = get_corner_dir_map(corner_preds, 256)
+                vectorized_gt, gt_corner_edge_map = get_corner_dir_map(gt_corner, 256)
+
+                input_im = np.transpose(non_norm_image.cpu().numpy().squeeze(0), [1, 2, 0])
+                corner_edge_map = np.clip(corner_edge_map + input_im, 0, 255)
+                gt_corner_edge_map = np.clip(gt_corner_edge_map + input_im, 0, 255)
+                heatmap = corner_preds[0]
+                heatmap_edge = edge_preds[0]
+
+                global_direction_hist = get_direction_hist(edge_preds)
+
+                print('finish corner predictions scene No.{}'.format(idx))
+
+                save_path_cornermap = os.path.join(viz_dir, '{}_corners_pred.png'.format(idx))
+                imsave(save_path_cornermap, corner_edge_map)
+                save_path_heatmap = os.path.join(viz_dir, '{}_heatmap_pred.png'.format(idx))
+                save_path_heatmap_edge = os.path.join(viz_dir, '{}_heatmap_edge_pred.png'.format(idx))
+                imsave(save_path_heatmap, heatmap)
+                imsave(save_path_heatmap_edge, heatmap_edge)
+
+                # dump the intermediate results to disk
+                if configs.dump_prediction is True:
+                    dump_dir = os.path.join(exp_dir, '{}_preds'.format(predict_phase))
+                    if not os.path.exists(dump_dir):
+                        os.makedirs(dump_dir)
+                    for pred_idx, pred_item in enumerate(vectorized_preds):  # keep the full binning information
+                        vectorized_preds[pred_idx]['binning'] = corner_preds[1:, pred_item['corner'][1],
+                                                                pred_item['corner'][0]]
+                    dump_path = os.path.join(dump_dir, '{}_corner_preds.npy'.format(idx))
+                    dump_data = {
+                        'vectorized_preds': vectorized_preds,
+                        'corner_heatmap': heatmap,
+                        'edge_preds': edge_preds,
+                        'direction_hist': global_direction_hist
+                    }
+                    with open(dump_path, 'wb') as f:
+                        np.save(f, dump_data)
+                continue
+
+
 
 
 if __name__ == '__main__':
-    config_dict = load_config(file_path='../configs/config_cornernet.yaml')
+    config_dict = load_config(file_path='../configs/config_cornernet_new.yaml')
     configs = Struct(**config_dict)
     extra_option = configs.extra if hasattr(configs, 'extra') else None
     config_str = compose_config_str(configs, keywords=['lr', 'batch_size', 'augmentation'], extra=extra_option)
